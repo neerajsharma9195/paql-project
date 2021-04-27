@@ -1,6 +1,7 @@
 import direct as d
 import time
 import numpy as np
+from collections import namedtuple
 
 
 def Sketch(partition, minmax, **kwargs):
@@ -12,7 +13,7 @@ def Sketch(partition, minmax, **kwargs):
 def Refine(df, group_id, refining_set, minmax, **kwargs):
     # Input: dataset with group_id, dataframe for refining set, all other constraint inputs for
     #       DIRECT problem
-    # Output: [solvable, df for refinning_set, objective] We need to keep
+    # Output: [solvable, df for refining_set, objective] We need to keep
     #       track of which tuples have been refined in refining_set for SketchRefine.  Refine replaces the
     #       representative tuple specified by group id with an actual tuple
     solvable = False
@@ -24,6 +25,7 @@ def Refine(df, group_id, refining_set, minmax, **kwargs):
     # Create new constraints given these fixed tuples
     kwargs_copy = kwargs.copy()
     A_0 = kwargs_copy.pop('A_0', None)
+    kwargs_copy.pop('count_constraint', None)
     constraints = [k for k in kwargs_copy.values()]
     constraints_mod = [ref_set_x_gid[ct[0]].sum() for ct in constraints]
     new_constraints = []
@@ -34,11 +36,11 @@ def Refine(df, group_id, refining_set, minmax, **kwargs):
         if U_k is not None:
             U_k = U_k - constraints_mod[i]
         new_constraints.append((name, L_k, U_k))
-    objective_mod = [ref_set_x_gid['A_0'].sum()]
+    objective_mod = ref_set_x_gid[A_0].sum()
     new_kwargs = dict()
     new_kwargs['A_0'] = A_0
     # New count constraint is 1 since we're replacing a single tuple for specified gid
-    new_kwargs['count_constraint'] = 1
+    new_kwargs['count_constraint'] = (1, 1)
     for i, val in enumerate(new_constraints):
         new_kwargs['c_{}'.format(i)] = val
     # Run direct to replace representative tuple specified by gid
@@ -47,9 +49,12 @@ def Refine(df, group_id, refining_set, minmax, **kwargs):
     if ilp_output.solvable:
         solvable = True
         solution = refining_set
-        solution.iloc[[group_id]] = ilp_output.solution.iloc[[0]]
+        new_row = ilp_output.solution.reset_index(drop=True)
+        new_row['id'] = None
+        solution[solution['gid'] == group_id] = new_row.loc[0]
         objective = ilp_output.objective + objective_mod
-    return [solvable, solution, objective]
+    final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
+    return final(solvable, solution, objective, None)
 
 
 def SketchRefine(df, partition, minmax, **kwargs):
@@ -68,23 +73,22 @@ def SketchRefine(df, partition, minmax, **kwargs):
         refining_set = sktch.solution
         # Refine phase
         total_groups = len(refining_set)
-        refined_tuples = np.zeros(total_groups)
-        current_refine_gid = 0
-        for gid in range(total_groups):
+        for index, row in refining_set.iterrows():
+            current_refine_gid = row['gid']
             refine_output = Refine(df, current_refine_gid, refining_set, minmax, **kwargs)
             if not refine_output.solvable:
                 print('ILP failed at refine stage for gid {}'.format(current_refine_gid))
                 return [False, None, None, None]
             else:
                 refining_set = refine_output.solution
-                refined_tuples[gid] = 1
                 current_refine_gid += 1
     end = time.time()
     solvable = True
     solution = refining_set
     objective = refine_output.objective
     runtime = end - start
-    return [solvable, solution, objective, runtime]
+    final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
+    return final(solvable, solution, objective, runtime)
 
 
 

@@ -50,6 +50,9 @@ def direct(df, minmax, **kwargs):
                 indices.append(int(var.name[2:]))
         solution = df.iloc[indices]
         objective = mdl.objective_value
+    else:
+        print('status code: ')
+        print(mdl.solve_details.status_code)
     end = time.time()
     run_time = end - start
     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
