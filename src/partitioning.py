@@ -32,4 +32,9 @@ def partition(input_dataframe, group_size_threshold, partitioning_attributes):
 
 
 def get_representative_for_group(input_dataframe, partitioning_attributes):
-    return input_dataframe.groupby('gid')[partitioning_attributes].mean()
+    output_frame = input_dataframe.groupby('gid')[partitioning_attributes].mean()
+    input_dataframe.groupby('gid').size().reset_index(name='counts')
+    print(input_dataframe.groupby('gid').size().reset_index(name='counts').head(20))
+    counts = input_dataframe.groupby('gid').size().reset_index(name='counts')['counts']
+    output_frame['counts'] = input_dataframe.groupby('gid').size()
+    return output_frame
