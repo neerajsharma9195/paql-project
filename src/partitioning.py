@@ -27,7 +27,7 @@ def partition(input_dataframe, group_size_threshold, partitioning_attributes, in
                         least_group_id)
                     input_dataframe.at[index, 'gid'] = new_group_id
                     # input_dataframe.set_value(index, 'gid', new_group_id)
-                    least_group_id += 2 ** len(partitioning_attributes)
+                least_group_id += 2 ** len(partitioning_attributes)
         group_sizes = [len(group_rows) for group_id, group_rows in input_dataframe.groupby('gid')]
         if all(group_size <= group_size_threshold for group_size in group_sizes):
             break
