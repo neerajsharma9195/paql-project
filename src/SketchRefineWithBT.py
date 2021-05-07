@@ -80,7 +80,7 @@ def direct_on_one_group(df, refining_package, minmax, **kwargs):
     return 0
 
 
-def Refine(df, group_ids, refining_package, P, S, ps, minmax, priority=0, **kwargs):
+def Refine(df, group_ids, representatives, P, S, refining_package, minmax, priority=0, **kwargs):
     # Input: df - dataset with group_id, dataframe for refining set or solution of sketch with the integer variable solutions for each representative of thr group,
     #        P [(Gi, ti)] - partitioning groups  and S = P initially partitioning groups yet to be refined
     #       all other constraint inputs for DIRECT problem
@@ -95,9 +95,9 @@ def Refine(df, group_ids, refining_package, P, S, ps, minmax, priority=0, **kwar
     random.shuffle(S)
     count = priority
     group_priorities = {}
-    for x, y in S:
-        heapq.heappush(U_priorityQ, (-count, x, y))
-        group_priorities[x] = -count
+    for g in S:
+        heapq.heappush(U_priorityQ, (-count, g))
+        group_priorities[g] = -count
         count += 1
 
     while len(U_priorityQ) > 0:
@@ -105,26 +105,26 @@ def Refine(df, group_ids, refining_package, P, S, ps, minmax, priority=0, **kwar
         # getting the group of most priority and pop it
         queue_top = heapq.heappop(U_priorityQ)
         Gi = queue_top[1]
-        ti = queue_top[2]
+
 
         # Skip groups that have no representative in refining package
-        Gi_solution = refining_package[Gi]['integer_var_solution']
+        Gi_solution = representatives[Gi]['integer_var_solution']
         if Gi_solution < 1:
             continue
 
         # run direct method on Gi, ti
-        ilp_output = direct_on_one_group(df, Gi, ps, minmax, **kwargs)
+        ilp_output = direct_on_one_group(df, Gi, refining_package, minmax, **kwargs)
 
         if ilp_output.solvable:
             solvable = True
-            solution = ps[ps['gid'] != Gi]
+            solution = refining_package[refining_package['gid'] != Gi]
 
-            S = list(filter(lambda item: item[0] != Gi, S))
+            S.remove(Gi)
 
             # Replace representative with tuples
 
             # recurse
-            p, F_new = Refine(df, group_ids, refining_package, P, S, ps, minmax, kwargs)
+            p, F_new = Refine(df, group_ids, representatives, P, S, refining_package, minmax, kwargs)
 
             if len(F_new) < 1:
                 return p, F
@@ -132,6 +132,12 @@ def Refine(df, group_ids, refining_package, P, S, ps, minmax, priority=0, **kwar
                 F.extend(F_new)
                 for f in F:
                     S = list(filter(lambda item: item[0] != f, S))
+
+        else:
+            if len(P) != len(S):
+                F.append(Gi)
+                return None, F
+    return None, F
 
 
 
@@ -160,7 +166,7 @@ def SketchRefine(df, partition, minmax, **kwargs):
         # current_refine_gid = row['gid']
         gids = refining_set['gid']
         counts = refining_set['counts']
-        P = [(gids[i], counts[i]) for i in range(len(gids))]
+        P = [gids[i] for i in range(len(gids))]
         refining_set = refining_set.set_index('gid')
         S = P
         ps = refining_set
