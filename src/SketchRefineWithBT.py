@@ -92,12 +92,11 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
     constraints = [k for k in kwargs_copy.values()]
 
     # multiply the occurrences with each representative value then subtract from ub and lb
+    # change counts  to integer
     for ct in constraints:
-        ref_set_x_gid[ct[0]] = ref_set_x_gid[ct[0]] * ref_set_x_gid['counts']
+        ref_set_x_gid[ct[0]] = ref_set_x_gid[ct[0]] * ref_set_x_gid['integer_var_solution']
     constraints_mod = [ref_set_x_gid[ct[0]].sum() if ref_set_x_gid[ct[0]].sum() is not None else 0 for ct in constraints]
     constraints_mod = [0 if math.isnan(x) else x for x in constraints_mod]
-    print("debug")
-    print(list_to_str(constraints_mod))
 
     if ref_set_x_gid is not None:
         new_constraints = []
@@ -116,7 +115,7 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
         # change count constraint
         # df.loc[df['year'] == 2012, 'sale'].iloc[0]
         ub = representatives.loc[representatives['gid'] == Gi, 'integer_var_solution'].iloc[0]
-        new_kwargs['count_constraint'] = (1, ub)
+        new_kwargs['count_constraint'] = (ub, ub)
         for i, val in enumerate(new_constraints):
             new_kwargs['c_{}'.format(i)] = val
     else:
@@ -241,12 +240,12 @@ def SketchRefine(df, partition, minmax, **kwargs):
         print("Refine outputs")
         print(list_to_str(F))
         print(refine_output.head())
-        end = time.time()
-        print(end-start)
-        exit(0)
-        if len(F) < 1:
-            return refine_output
-        else:
+        # end = time.time()
+        # print(end-start)
+        # exit(0)
+        # if len(F) < 1:
+        #     return refine_output
+        if len(F) > 0:
             print('ILP failed at refine stage for gids {}'.format(list_to_str(F)))
             return [False, None, None, None]
             # if not refine_output.solvable:
@@ -257,8 +256,15 @@ def SketchRefine(df, partition, minmax, **kwargs):
             #     current_refine_gid += 1
     end = time.time()
     solvable = True
-    solution = refining_set
-    objective = refine_output.objective
+    solution = refine_output
+    A_0 = kwargs.pop('A_0', None)
+    # calculate objective from the returned tuples-
+    if A_0 is not None:
+        objective = refine_output[A_0].sum()
+    else:
+        objective = refine_output.shape[0]
+
+
     runtime = end - start
     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
     return final(solvable, solution, objective, runtime)
