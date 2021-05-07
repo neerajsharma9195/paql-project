@@ -132,13 +132,17 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
         new_row = ilp_output.solution.reset_index(drop=True)
         new_row['id'] = None
         new_row['integer_var_solution'] = 1
-        print(new_row.columns)
-        print(solution.columns)
+        # print(new_row.columns)
+        # print(solution.columns)
         # solution[solution['gid'] == Gi] = new_row.loc[0]
         objective = ilp_output.objective + objective_mod
-    print(solvable, solution, objective)
+        # print("inside direct one ------------------------", Gi)
+        # print(ilp_output.solution)
+    # print(solvable, solution, objective)
+    else:
+        print("failed on ", Gi)
     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
-    return final(solvable, solution, objective, None)
+    return final(solvable, ilp_output.solution, objective, None)
 
 
 def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kwargs):
@@ -147,7 +151,7 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
     #       all other constraint inputs for DIRECT problem
 
     F = []
-
+    print(list_to_str(S))
 
     if len(S) < 1:
         return refining_package, F
@@ -194,12 +198,19 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
                 return p, F
             else:
                 F.extend(F_new)
+                # print('F',list_to_str(F))
+                # print('U',list_to_str(U_priorityQ))
                 # greedily prioritize non refinable groups
+
+
                 for f in F:
                     U_priorityQ.remove((group_priorities[f], f))
                     heapq.heappush(U_priorityQ, (-count, f))
                     group_priorities[f] = -count
                     count += 1
+
+                # print('Q',list_to_str(U_priorityQ))
+                # exit(0)
 
         else:
             if len(P) != len(S):
@@ -242,7 +253,7 @@ def SketchRefine(df, partition, minmax, **kwargs):
         refine_output, F = Refine(df, representatives , P, S, ps, minmax, **kwargs)
         print("Refine outputs")
         print(list_to_str(F))
-        print(refine_output.head())
+        # print(refine_output.head())
         # end = time.time()
         # print(end-start)
         # exit(0)

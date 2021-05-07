@@ -84,26 +84,26 @@ def query1_pulp():
 # print("runtime: {0!s}".format(Q1.run_time))
 
 
-# # Test query 2
-print("\n")
-print("sketchrefine method for query 2:")
-Q2 = srt.SketchRefine(df, representatives, 'min', A_0='ps_min_supplycost', count_constraint=(1, None),
-                      c1=('p_size', None, 8))
-print("solvable: {}".format(Q2.solvable))
-print("solution:")
-print(Q2.solution)
-print("objective: {0!s}".format(Q2.objective))
-print("runtime: {0!s}".format(Q2.run_time))
+# # # Test query 2
+# print("\n")
+# print("sketchrefine method for query 2:")
+# Q2 = srt.SketchRefine(df, representatives, 'min', A_0='ps_min_supplycost', count_constraint=(1, None),
+#                       c1=('p_size', None, 8))
+# print("solvable: {}".format(Q2.solvable))
+# print("solution:")
+# print(Q2.solution)
+# print("objective: {0!s}".format(Q2.objective))
+# print("runtime: {0!s}".format(Q2.run_time))
 #
 # Test query 3
-print("\n")
-print("sketchrefine method for query 3:")
-Q3 = srt.SketchRefine(df, representatives, 'min', count_constraint=(1, None), c1=('revenue', 413930.849506, None))
-print("solvable: {}".format(Q3.solvable))
-print("solution:")
-print(Q3.solution)
-print("objective: {0!s}".format(Q3.objective))
-print("runtime: {0!s}".format(Q3.run_time))
+# print("\n")
+# print("sketchrefine method for query 3:")
+# Q3 = srt.SketchRefine(df, representatives, 'min', count_constraint=(1, None), c1=('revenue', 413930.849506, None))
+# print("solvable: {}".format(Q3.solvable))
+# print("solution:")
+# print(Q3.solution)
+# print("objective: {0!s}".format(Q3.objective))
+# print("runtime: {0!s}".format(Q3.run_time))
 
 # Test query 4
 print("\n")
