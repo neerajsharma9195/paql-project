@@ -1,6 +1,7 @@
 import direct as d
 import time
 import numpy as np
+import  pandas as pd
 from collections import namedtuple
 import random
 import heapq
@@ -117,11 +118,12 @@ def Refine(df, group_ids, representatives, P, S, refining_package, minmax, prior
 
         if ilp_output.solvable:
             solvable = True
-            solution = refining_package[refining_package['gid'] != Gi]
-
-            S.remove(Gi)
 
             # Replace representative with tuples
+            refining_package_without_gi = refining_package[refining_package['gid'] != Gi]
+            refining_package = pd.concat([refining_package_without_gi, ilp_output.solution])
+
+            S.remove(Gi)
 
             # recurse
             p, F_new = Refine(df, group_ids, representatives, P, S, refining_package, minmax, kwargs)
@@ -130,8 +132,12 @@ def Refine(df, group_ids, representatives, P, S, refining_package, minmax, prior
                 return p, F
             else:
                 F.extend(F_new)
+                # greedily prioritize non refinable groups
                 for f in F:
-                    S = list(filter(lambda item: item[0] != f, S))
+                    U_priorityQ.remove((group_priorities[f], f))
+                    heapq.heappush(U_priorityQ, (-count, f))
+                    group_priorities[f] = -count
+                    count += 1
 
         else:
             if len(P) != len(S):
