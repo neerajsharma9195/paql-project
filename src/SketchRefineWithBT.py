@@ -109,7 +109,7 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
     # New count constraint is 1 since we're replacing a single tuple for specified gid
 
     # change count constraint
-    new_kwargs['count_constraint'] = (1, 1)
+    new_kwargs['count_constraint'] = (1, representatives[Gi]['integer_var_solution'])
     for i, val in enumerate(new_constraints):
         new_kwargs['c_{}'.format(i)] = val
     # Run direct to replace representative tuple specified by gid
