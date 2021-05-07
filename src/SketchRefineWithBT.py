@@ -139,7 +139,7 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
     return final(solvable, solution, objective, None)
 
 
-def Refine(df, group_ids, representatives, P, S, refining_package, minmax, priority=0, **kwargs):
+def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kwargs):
     # Input: df - dataset with group_id, dataframe for refining set or solution of sketch with the integer variable solutions for each representative of thr group,
     #        P [(Gi, ti)] - partitioning groups  and S = P initially partitioning groups yet to be refined
     #       all other constraint inputs for DIRECT problem
@@ -186,7 +186,7 @@ def Refine(df, group_ids, representatives, P, S, refining_package, minmax, prior
             S.remove(Gi)
 
             # recurse
-            p, F_new = Refine(df, group_ids, representatives, P, S, refining_package, minmax, kwargs)
+            p, F_new = Refine(df, representatives, P, S, refining_package, minmax, kwargs)
 
             if len(F_new) < 1:
                 return p, F
@@ -237,10 +237,12 @@ def SketchRefine(df, partition, minmax, **kwargs):
         S = list(P)
         ps = refining_set
         representatives = refining_set
-        refine_output, F = Refine(df, gids, representatives , P, S, ps, minmax, **kwargs)
+        refine_output, F = Refine(df, representatives , P, S, ps, minmax, **kwargs)
         print("Refine outputs")
         print(list_to_str(F))
         print(refine_output.head())
+        end = time.time()
+        print(end-start)
         exit(0)
         if len(F) < 1:
             return refine_output
