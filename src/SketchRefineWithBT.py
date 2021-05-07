@@ -1,5 +1,6 @@
 import direct as d
 import time
+import math
 import numpy as np
 import  pandas as pd
 from collections import namedtuple
@@ -82,7 +83,6 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
     solvable = False
     solution = None
     objective = None
-
     # Fix refining_package besides the specified group_id
     ref_set_x_gid = refining_package[refining_package['gid'] != Gi]
     # Create new constraints given these fixed tuples
@@ -94,24 +94,33 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
     # multiply the occurrences with each representative value then subtract from ub and lb
     for ct in constraints:
         ref_set_x_gid[ct[0]] = ref_set_x_gid[ct[0]] * ref_set_x_gid['counts']
-    constraints_mod = [ref_set_x_gid[ct[0]].sum() for ct in constraints]
-    new_constraints = []
-    for i, val in enumerate(constraints):
-        name, L_k, U_k = val
-        if L_k is not None:
-            L_k = L_k - constraints_mod[i]
-        if U_k is not None:
-            U_k = U_k - constraints_mod[i]
-        new_constraints.append((name, L_k, U_k))
-    objective_mod = ref_set_x_gid[A_0].sum()
-    new_kwargs = dict()
-    new_kwargs['A_0'] = A_0
-    # New count constraint is 1 since we're replacing a single tuple for specified gid
+    constraints_mod = [ref_set_x_gid[ct[0]].sum() if ref_set_x_gid[ct[0]].sum() is not None else 0 for ct in constraints]
+    constraints_mod = [0 if math.isnan(x) else x for x in constraints_mod]
+    print("debug")
+    print(list_to_str(constraints_mod))
 
-    # change count constraint
-    new_kwargs['count_constraint'] = (1, representatives[Gi]['integer_var_solution'])
-    for i, val in enumerate(new_constraints):
-        new_kwargs['c_{}'.format(i)] = val
+    if ref_set_x_gid is not None:
+        new_constraints = []
+        for i, val in enumerate(constraints):
+            name, L_k, U_k = val
+            if L_k is not None:
+                L_k = L_k - constraints_mod[i]
+            if U_k is not None:
+                U_k = U_k - constraints_mod[i]
+            new_constraints.append((name, L_k, U_k))
+        objective_mod = ref_set_x_gid[A_0].sum()
+        new_kwargs = dict()
+        new_kwargs['A_0'] = A_0
+        # New count constraint is 1 since we're replacing a single tuple for specified gid
+
+        # change count constraint
+        # df.loc[df['year'] == 2012, 'sale'].iloc[0]
+        ub = representatives.loc[representatives['gid'] == Gi, 'integer_var_solution'].iloc[0]
+        new_kwargs['count_constraint'] = (1, ub)
+        for i, val in enumerate(new_constraints):
+            new_kwargs['c_{}'.format(i)] = val
+    else:
+        new_kwargs = kwargs
     # Run direct to replace representative tuple specified by gid
     df_gid = df[df['gid'] == Gi]
     ilp_output = d.direct(df_gid, minmax, **new_kwargs)
@@ -120,8 +129,12 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
         solution = refining_package
         new_row = ilp_output.solution.reset_index(drop=True)
         new_row['id'] = None
-        solution[solution['gid'] == Gi] = new_row.loc[0]
+        new_row['integer_var_solution'] = 1
+        print(new_row.columns)
+        print(solution.columns)
+        # solution[solution['gid'] == Gi] = new_row.loc[0]
         objective = ilp_output.objective + objective_mod
+    print(solvable, solution, objective)
     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
     return final(solvable, solution, objective, None)
 
@@ -132,6 +145,7 @@ def Refine(df, group_ids, representatives, P, S, refining_package, minmax, prior
     #       all other constraint inputs for DIRECT problem
 
     F = []
+
 
     if len(S) < 1:
         return refining_package, F
@@ -150,11 +164,12 @@ def Refine(df, group_ids, representatives, P, S, refining_package, minmax, prior
 
         # getting the group of most priority and pop it
         queue_top = heapq.heappop(U_priorityQ)
-        Gi = queue_top[1]
 
+        Gi = queue_top[1]
+        print('queue top = ',Gi)
 
         # Skip groups that have no representative in refining package
-        Gi_solution = representatives[Gi]['integer_var_solution']
+        Gi_solution = representatives.loc[representatives['gid'] == Gi, 'integer_var_solution'].iloc[0]
         if Gi_solution < 1:
             continue
 
@@ -217,11 +232,16 @@ def SketchRefine(df, partition, minmax, **kwargs):
         # current_refine_gid = row['gid']
         gids = refining_set['gid']
         counts = refining_set['counts']
-        P = [gids[i] for i in range(len(gids))]
+        P = list(gids)
         # refining_set = refining_set.set_index('gid')
-        S = P
+        S = list(P)
         ps = refining_set
-        refine_output, F = Refine(df, gids, refining_set.set_index('gid'), P, S, ps, minmax, **kwargs)
+        representatives = refining_set
+        refine_output, F = Refine(df, gids, representatives , P, S, ps, minmax, **kwargs)
+        print("Refine outputs")
+        print(list_to_str(F))
+        print(refine_output.head())
+        exit(0)
         if len(F) < 1:
             return refine_output
         else:
