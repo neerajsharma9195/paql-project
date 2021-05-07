@@ -2,3 +2,5 @@ pulp
 pandas
 numpy
 scikit-learn
+cplex
+docplex

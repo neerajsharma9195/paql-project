@@ -4,7 +4,7 @@ import pandas as pd
 from collections import namedtuple
 
 
-def direct(df, minmax, **kwargs):
+def direct(df, minmax, sketchRefine=False, **kwargs):
     # Inputs: dataframe df, "min or "max" for objective, A_0='attribute name' for objective function,
     #        c#=('attribute_name', L_k, U_k) which give bounds for each attribute with a constraint
     #        (# can be 1,2,...,14 order doesn't matter), count_range=(L_c, U,c) which is bounds for count constraint
@@ -20,7 +20,11 @@ def direct(df, minmax, **kwargs):
     # Create binary variable for each tuple, named after its index in df
     variables = []
     for i in range(len(df)):
-        variables.append(mdl.binary_var("t_{}".format(i)))
+        if sketchRefine is False:
+            variables.append(mdl.binary_var("t_{}".format(i)))
+        else:
+            ub = int(df.at[i,'counts'])
+            variables.append(mdl.integer_var(name="t_{}".format(i), lb=0, ub=ub))
     # Add constraints
     for ct in constraints:
         name, L_k, U_k = ct
@@ -45,11 +49,22 @@ def direct(df, minmax, **kwargs):
     if solve is not None:
         indices = []
         solvable = True
+        integer_vars = []
         for var in variables:
-            if var.solution_value == 1:
-                indices.append(int(var.name[2:]))
+            if sketchRefine is False:
+                if var.solution_value == 1:
+                    indices.append(int(var.name[2:]))
+            else:
+                if var.solution_value > 0:
+                    indices.append(int(var.name[2:]))
+                    integer_vars.append(var.solution_value)
         solution = df.iloc[indices]
         objective = mdl.objective_value
+
+        # adding the count of each representative
+        if sketchRefine:
+            solution['integer_var_solution'] = integer_vars
+
     else:
         print('status code: ')
         print(mdl.solve_details.status_code)
