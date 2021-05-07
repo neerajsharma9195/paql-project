@@ -221,6 +221,8 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
                     group_priorities[f] = -count
                     count += 1
 
+                refining_package = representatives
+
                 print('Q',list_to_str(U_priorityQ))
                 # exit(0)
 
