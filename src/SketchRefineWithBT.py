@@ -28,18 +28,63 @@ def Sketch(partition, minmax, **kwargs):
 
 
 
-def Refining(df, group_id, refining_set, minmax, **kwargs):
-    # Input: dataset with group_id, dataframe for refining set, all other constraint inputs for
-    #       DIRECT problem
-    # Output: [solvable, df for refining_set, objective] We need to keep
-    #       track of which tuples have been refined in refining_set for SketchRefine.  Refine replaces the
-    #       representative tuple specified by group id with an actual tuple
+# def Refining(df, group_id, refining_set, minmax, **kwargs):
+#     # Input: dataset with group_id, dataframe for refining set, all other constraint inputs for
+#     #       DIRECT problem
+#     # Output: [solvable, df for refining_set, objective] We need to keep
+#     #       track of which tuples have been refined in refining_set for SketchRefine.  Refine replaces the
+#     #       representative tuple specified by group id with an actual tuple
+#     solvable = False
+#     solution = None
+#     objective = None
+#
+#     # Fix sketch set besides the specified group_id
+#     ref_set_x_gid = refining_set[refining_set['gid'] != group_id]
+#     # Create new constraints given these fixed tuples
+#     kwargs_copy = kwargs.copy()
+#     A_0 = kwargs_copy.pop('A_0', None)
+#     kwargs_copy.pop('count_constraint', None)
+#     constraints = [k for k in kwargs_copy.values()]
+#
+#     # multiply the occurrences with each representative value then subtract from ub and lb
+#     constraints_mod = [ref_set_x_gid[ct[0]].sum() for ct in constraints]
+#     new_constraints = []
+#     for i, val in enumerate(constraints):
+#         name, L_k, U_k = val
+#         if L_k is not None:
+#             L_k = L_k - constraints_mod[i]
+#         if U_k is not None:
+#             U_k = U_k - constraints_mod[i]
+#         new_constraints.append((name, L_k, U_k))
+#     objective_mod = ref_set_x_gid[A_0].sum()
+#     new_kwargs = dict()
+#     new_kwargs['A_0'] = A_0
+#     # New count constraint is 1 since we're replacing a single tuple for specified gid
+#     new_kwargs['count_constraint'] = (1, 1)
+#     for i, val in enumerate(new_constraints):
+#         new_kwargs['c_{}'.format(i)] = val
+#     # Run direct to replace representative tuple specified by gid
+#     df_gid = df[df['gid'] == group_id]
+#     ilp_output = d.direct(df_gid, minmax, **new_kwargs)
+#     if ilp_output.solvable:
+#         solvable = True
+#         solution = refining_set
+#         new_row = ilp_output.solution.reset_index(drop=True)
+#         new_row['id'] = None
+#         solution[solution['gid'] == group_id] = new_row.loc[0]
+#         objective = ilp_output.objective + objective_mod
+#     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
+#     return final(solvable, solution, objective, None)
+
+
+
+def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwargs):
     solvable = False
     solution = None
     objective = None
 
-    # Fix sketch set besides the specified group_id
-    ref_set_x_gid = refining_set[refining_set['gid'] != group_id]
+    # Fix refining_package besides the specified group_id
+    ref_set_x_gid = refining_package[refining_package['gid'] != Gi]
     # Create new constraints given these fixed tuples
     kwargs_copy = kwargs.copy()
     A_0 = kwargs_copy.pop('A_0', None)
@@ -47,6 +92,8 @@ def Refining(df, group_id, refining_set, minmax, **kwargs):
     constraints = [k for k in kwargs_copy.values()]
 
     # multiply the occurrences with each representative value then subtract from ub and lb
+    for ct in constraints:
+        ref_set_x_gid[ct[0]] = ref_set_x_gid[ct[0]] * ref_set_x_gid['counts']
     constraints_mod = [ref_set_x_gid[ct[0]].sum() for ct in constraints]
     new_constraints = []
     for i, val in enumerate(constraints):
@@ -60,25 +107,23 @@ def Refining(df, group_id, refining_set, minmax, **kwargs):
     new_kwargs = dict()
     new_kwargs['A_0'] = A_0
     # New count constraint is 1 since we're replacing a single tuple for specified gid
+
+    # change count constraint
     new_kwargs['count_constraint'] = (1, 1)
     for i, val in enumerate(new_constraints):
         new_kwargs['c_{}'.format(i)] = val
     # Run direct to replace representative tuple specified by gid
-    df_gid = df[df['gid'] == group_id]
+    df_gid = df[df['gid'] == Gi]
     ilp_output = d.direct(df_gid, minmax, **new_kwargs)
     if ilp_output.solvable:
         solvable = True
-        solution = refining_set
+        solution = refining_package
         new_row = ilp_output.solution.reset_index(drop=True)
         new_row['id'] = None
-        solution[solution['gid'] == group_id] = new_row.loc[0]
+        solution[solution['gid'] == Gi] = new_row.loc[0]
         objective = ilp_output.objective + objective_mod
     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
     return final(solvable, solution, objective, None)
-
-
-def direct_on_one_group(df, refining_package, minmax, **kwargs):
-    return 0
 
 
 def Refine(df, group_ids, representatives, P, S, refining_package, minmax, priority=0, **kwargs):
@@ -114,7 +159,7 @@ def Refine(df, group_ids, representatives, P, S, refining_package, minmax, prior
             continue
 
         # run direct method on Gi, ti
-        ilp_output = direct_on_one_group(df, Gi, refining_package, minmax, **kwargs)
+        ilp_output = direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwargs)
 
         if ilp_output.solvable:
             solvable = True
@@ -173,10 +218,10 @@ def SketchRefine(df, partition, minmax, **kwargs):
         gids = refining_set['gid']
         counts = refining_set['counts']
         P = [gids[i] for i in range(len(gids))]
-        refining_set = refining_set.set_index('gid')
+        # refining_set = refining_set.set_index('gid')
         S = P
         ps = refining_set
-        refine_output, F = Refine(df, gids, refining_set, P, S, ps, minmax, **kwargs)
+        refine_output, F = Refine(df, gids, refining_set.set_index('gid'), P, S, ps, minmax, **kwargs)
         if len(F) < 1:
             return refine_output
         else:
