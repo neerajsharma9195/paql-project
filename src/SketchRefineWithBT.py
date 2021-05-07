@@ -4,7 +4,9 @@ import math
 import numpy as np
 import  pandas as pd
 from collections import namedtuple
+
 import random
+random.seed(42)
 import heapq
 
 
@@ -201,7 +203,17 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
                 # print('F',list_to_str(F))
                 # print('U',list_to_str(U_priorityQ))
                 # greedily prioritize non refinable groups
+                heapq.heappush(U_priorityQ, (-count, Gi))
+                group_priorities[Gi] = -count
+                count += 1
 
+                U_priorityQ = []
+                S = P
+
+                for g in S:
+                    heapq.heappush(U_priorityQ, (-count, g))
+                    group_priorities[g] = -count
+                    count += 1
 
                 for f in F:
                     U_priorityQ.remove((group_priorities[f], f))
@@ -209,13 +221,13 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
                     group_priorities[f] = -count
                     count += 1
 
-                # print('Q',list_to_str(U_priorityQ))
+                print('Q',list_to_str(U_priorityQ))
                 # exit(0)
 
         else:
             if len(P) != len(S):
                 F.append(Gi)
-                return None, F
+                # return None, F
     return None, F
 
 
@@ -251,7 +263,7 @@ def SketchRefine(df, partition, minmax, **kwargs):
         ps = refining_set
         representatives = refining_set
         refine_output, F = Refine(df, representatives , P, S, ps, minmax, **kwargs)
-        print("Refine outputs")
+        print("Refine outputs- failed groups")
         print(list_to_str(F))
         # print(refine_output.head())
         # end = time.time()
