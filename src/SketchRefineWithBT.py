@@ -107,7 +107,10 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
             if U_k is not None:
                 U_k = U_k - constraints_mod[i]
             new_constraints.append((name, L_k, U_k))
-        objective_mod = ref_set_x_gid[A_0].sum()
+        if A_0 is not None:
+            objective_mod = ref_set_x_gid[A_0].sum()
+        else:
+            objective_mod = ref_set_x_gid.shape[0]
         new_kwargs = dict()
         new_kwargs['A_0'] = A_0
         # New count constraint is 1 since we're replacing a single tuple for specified gid
@@ -185,7 +188,7 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
             S.remove(Gi)
 
             # recurse
-            p, F_new = Refine(df, representatives, P, S, refining_package, minmax, kwargs)
+            p, F_new = Refine(df, representatives, P, S, refining_package, minmax, **kwargs)
 
             if len(F_new) < 1:
                 return p, F
