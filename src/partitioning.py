@@ -2,6 +2,12 @@ import pandas as pd
 
 
 def get_group_id(group_binary_arr, least_group_id):
+    '''
+
+    :param group_binary_arr: array of size partitoning_attributes having value 0 and 1 based on comparison with representative tuple
+    :param least_group_id: initial group id from where new group id can be given
+    :return: group id for the tuple
+    '''
     ans = 0
     power = 1
     for val in group_binary_arr:
@@ -11,6 +17,14 @@ def get_group_id(group_binary_arr, least_group_id):
 
 
 def partition(input_dataframe, group_size_threshold, partitioning_attributes, initialize = True):
+    '''
+
+    :param input_dataframe: dataframe
+    :param group_size_threshold: partition size constraint
+    :param partitioning_attributes: attributes need to consider for partitioning. Using these attributes per group can be separated in 2^(size(partitioning_attributes)).
+    :param initialize: whether to start partitoning from start or not
+    :return: partitioned dataframe
+    '''
     if initialize is True:
         input_dataframe['gid'] = 1
         least_group_id = 0
@@ -36,29 +50,20 @@ def partition(input_dataframe, group_size_threshold, partitioning_attributes, in
     return input_dataframe
 
 
+def get_representative_for_group(input_dataframe, partitioning_attributes, representative_type='min'):
+    '''
 
-# def get_representative_for_group_for_query(input_dataframe, partitioning_attributes, query_obj=None, min=None):
-#     output_frame = input_dataframe.groupby('gid')[partitioning_attributes].max()
-#     input_dataframe.groupby('gid').size().reset_index(name='counts')
-#     print(input_dataframe.groupby('gid').size().reset_index(name='counts').head(20))
-#     counts = input_dataframe.groupby('gid').size().reset_index(name='counts')['counts']
-#     output_frame['counts'] = input_dataframe.groupby('gid').size()
-#     if min != None:
-#         if min:
-#             output_frame[query_obj] = input_dataframe.groupby('gid')[query_obj].min()
-#         else:
-#             output_frame[query_obj] = input_dataframe.groupby('gid')[query_obj].max()
-#     return output_frame
-
-
-def get_representative_for_group(input_dataframe, partitioning_attributes):
-    # mean = input_dataframe.groupby('gid')[partitioning_attributes].mean().reset_index()
-    # min = input_dataframe.groupby('gid')[partitioning_attributes].min().reset_index()
-    max = input_dataframe.groupby('gid')[partitioning_attributes].max().reset_index()
-    # df_rep = pd.concat([mean, min, max])
-    # df_rep = min
-    # df_rep = mean
-    df_rep = max
+    :param input_dataframe: data
+    :param partitioning_attributes: attributes for representative tuples to consider
+    :param representative_type: max, min, mean: how to select representative tuple from group
+    :return: representative tuples
+    '''
+    if representative_type == 'mean':
+        df_rep = input_dataframe.groupby('gid')[partitioning_attributes].mean().reset_index()
+    elif representative_type == 'min':
+        df_rep = input_dataframe.groupby('gid')[partitioning_attributes].min().reset_index()
+    else:
+        df_rep = input_dataframe.groupby('gid')[partitioning_attributes].max().reset_index()
     counts = input_dataframe.groupby('gid').size().reset_index(name='counts')['counts']
     df_rep['counts'] = counts
     return df_rep.reset_index(drop=True)
