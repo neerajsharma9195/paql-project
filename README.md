@@ -6,6 +6,7 @@ PaQL Package Query Results Recreation
         We are using cplex academic initative project for this implementation.
      - Download tpch.csv from http://avid.cs.umass.edu/courses/645/s2021/project/paql_data/tpch.csv and put in data folder inside src directory.
      - pip install -r requirements.txt
+     - setup.py file and cplex folder in src directory are copied from Applications folder to run with cplex. 
 
 2) Direct Method:
    - Implementation of direct method using cplex is in src/direct.py
