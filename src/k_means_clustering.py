@@ -1,3 +1,7 @@
+'''
+Author: Neeraj Sharma: neerajsharma@umass.edu
+'''
+
 from sklearn.cluster import KMeans
 import numpy as np
 import pandas as pd

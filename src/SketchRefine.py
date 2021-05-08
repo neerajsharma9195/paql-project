@@ -1,3 +1,7 @@
+'''
+Author: Thomas Fang: tfang@umass.edu
+'''
+
 import direct as d
 import time
 from collections import namedtuple
