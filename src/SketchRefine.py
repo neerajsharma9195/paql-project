@@ -1,21 +1,31 @@
 import direct as d
 import time
-import numpy as np
 from collections import namedtuple
 
 
 def Sketch(partition, minmax, **kwargs):
-    # Input: dataframe for partition, all other constraint inputs for DIRECT problem
-    # Output: DIRECT output over representative tuples of partition
+    '''
+
+    :param partition: partition representatives
+    :param minmax:  "min or "max" for objective
+    :param kwargs: all other constraint inputs for DIRECT problem
+    :return: Sketch Package (DIRECT output over representative tuples of partition)
+    '''
     return d.direct(partition, minmax, **kwargs)
 
 
 def Refine(df, group_id, refining_set, minmax, **kwargs):
-    # Input: dataset with group_id, dataframe for refining set, all other constraint inputs for
-    #       DIRECT problem
-    # Output: [solvable, df for refining_set, objective] We need to keep
-    #       track of which tuples have been refined in refining_set for SketchRefine.  Refine replaces the
-    #       representative tuple specified by group id with an actual tuple
+    '''
+
+    :param df: dataset with group_id
+    :param group_id: group id od group which needs to be refined
+    :param refining_set: current refined set
+    :param minmax: "min or "max" for objective
+    :param kwargs: all other constraint inputs for DIRECT problem
+    :return: [solvable, df for refining_set, objective]
+    (track of which tuples have been refined in refining_set for SketchRefine. Refine replaces the representative tuple specified
+     by group id with an actual tuple)
+    '''
     solvable = False
     solution = None
     objective = None
@@ -58,8 +68,14 @@ def Refine(df, group_id, refining_set, minmax, **kwargs):
 
 
 def SketchRefine(df, partition, minmax, **kwargs):
-    # Input: dataset with group_id, dataframe for partition, all other constraint inputs for DIRECT problem
-    # Output: [solvable, solution, objective, runtime]
+    '''
+
+    :param df: dataset with group_id
+    :param partition: dataframe for partition
+    :param minmax:  "min or "max" for objective
+    :param kwargs: all other constraint inputs for DIRECT problem
+    :return:  [solvable, solution, objective, runtime] complete refined package
+    '''
     start = time.time()
     solvable = False
     solution = None
@@ -89,6 +105,3 @@ def SketchRefine(df, partition, minmax, **kwargs):
     runtime = end - start
     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
     return final(solvable, solution, objective, runtime)
-
-
-

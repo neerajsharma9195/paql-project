@@ -39,10 +39,10 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
     :param df:
     :param representatives:
     :param Gi: Current group which we need to refine
-    :param refining_package:
+    :param refining_package: current refining_package
     :param minmax:  "min or "max" for objective
-    :param kwargs:
-    :return:
+    :param kwargs: all other constraint inputs for problem
+    :return: Refined solution with the current group original tuples
     '''
     solvable = False
     solution = None
