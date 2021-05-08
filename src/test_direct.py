@@ -1,3 +1,9 @@
+'''
+Author: Thomas Fang: tfang@umass.edu
+        Ananya Gupta: ananyagupta@umass.edu
+'''
+
+
 import time
 from docplex.mp.model import Model
 import pandas as pd

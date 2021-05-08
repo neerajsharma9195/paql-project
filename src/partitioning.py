@@ -1,4 +1,6 @@
-import pandas as pd
+'''
+Author: Neeraj Sharma: neerajsharma@umass.edu
+'''
 
 
 def get_group_id(group_binary_arr, least_group_id):

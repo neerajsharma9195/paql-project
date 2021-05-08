@@ -1,6 +1,10 @@
+'''
+Author: Thomas Fang: tfang@umass.edu
+        Neeraj Sharma: neerajsharma@umass.edu
+'''
+
 import time
 from docplex.mp.model import Model
-import pandas as pd
 from collections import namedtuple
 
 

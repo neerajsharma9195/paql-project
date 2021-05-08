@@ -1,3 +1,8 @@
+'''
+Author: Thomas Fang: tfang@umass.edu
+        Neeraj Sharma: neerajsharma@umass.edu
+'''
+
 import partitioning as p
 import pandas as pd
 import time

@@ -1,3 +1,7 @@
+'''
+Author: Thomas Fang: tfang@umass.edu
+'''
+
 import SketchRefineWithBT as sr
 import pandas as pd
 import time

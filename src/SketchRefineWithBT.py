@@ -1,7 +1,10 @@
+'''
+Author: Ananya Gupta: ananyagupta@umass.edu
+'''
+
 import direct as d
 import time
 import math
-import numpy as np
 import pandas as pd
 from collections import namedtuple
 
