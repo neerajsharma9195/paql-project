@@ -36,12 +36,29 @@ def partition(input_dataframe, group_size_threshold, partitioning_attributes, in
     return input_dataframe
 
 
+
+# def get_representative_for_group_for_query(input_dataframe, partitioning_attributes, query_obj=None, min=None):
+#     output_frame = input_dataframe.groupby('gid')[partitioning_attributes].max()
+#     input_dataframe.groupby('gid').size().reset_index(name='counts')
+#     print(input_dataframe.groupby('gid').size().reset_index(name='counts').head(20))
+#     counts = input_dataframe.groupby('gid').size().reset_index(name='counts')['counts']
+#     output_frame['counts'] = input_dataframe.groupby('gid').size()
+#     if min != None:
+#         if min:
+#             output_frame[query_obj] = input_dataframe.groupby('gid')[query_obj].min()
+#         else:
+#             output_frame[query_obj] = input_dataframe.groupby('gid')[query_obj].max()
+#     return output_frame
+
+
 def get_representative_for_group(input_dataframe, partitioning_attributes):
     # mean = input_dataframe.groupby('gid')[partitioning_attributes].mean().reset_index()
-    min = input_dataframe.groupby('gid')[partitioning_attributes].min().reset_index()
-    # max = input_dataframe.groupby('gid')[partitioning_attributes].max().reset_index()
+    # min = input_dataframe.groupby('gid')[partitioning_attributes].min().reset_index()
+    max = input_dataframe.groupby('gid')[partitioning_attributes].max().reset_index()
     # df_rep = pd.concat([mean, min, max])
-    df_rep = min
+    # df_rep = min
+    # df_rep = mean
+    df_rep = max
     counts = input_dataframe.groupby('gid').size().reset_index(name='counts')['counts']
     df_rep['counts'] = counts
     return df_rep.reset_index(drop=True)
