@@ -2,8 +2,9 @@
 PaQL Package Query Results Recreation
 
 1) Requirements:
- - install cplex 
- - pip install -r requirements.txt
+     - Install cplex (https://www.ibm.com/docs/en/icos/12.7.1.0?topic=v1271-installing-cplex-optimization-studio)
+        We are using cplex academic initative project for this implementation.
+     - pip install -r requirements.txt
 
 2) Direct Method:
    To run the direct method approach:
@@ -13,8 +14,9 @@ PaQL Package Query Results Recreation
     - run src/export_partition_to_csv.py
  
 4) Sketch Refine:
-    Implementation for SketchRefine is in src/SketchRefine.py and sketch refine with greedy backtracking is in src/
-   - run src/test_backtracking_1.py
+    - Implementation for SketchRefine is in src/SketchRefine.py
+    - Implementation for SketchRefine with greedy backtracking is in src/SketchRefineWithBT.py
+    - run src/test_backtracking_1.py for our results
 
 
 
