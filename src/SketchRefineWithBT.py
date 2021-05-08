@@ -23,12 +23,27 @@ def list_to_str(arr):
 
 
 def Sketch(partition, minmax, **kwargs):
-    # Input: dataframe for partition, all other constraint inputs for DIRECT problem
-    # Output: DIRECT output over representative tuples of partition
+    '''
+
+    :param partition: partition representatives
+    :param minmax:  "min or "max" for objective
+    :param kwargs: all other constraint inputs for DIRECT problem
+    :return: Sketch Package (DIRECT output over representative tuples of partition)
+    '''
     return d.direct(partition, minmax, True, **kwargs)
 
 
 def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwargs):
+    '''
+
+    :param df:
+    :param representatives:
+    :param Gi: Current group which we need to refine
+    :param refining_package:
+    :param minmax:  "min or "max" for objective
+    :param kwargs:
+    :return:
+    '''
     solvable = False
     solution = None
     objective = None
@@ -66,15 +81,12 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
         # New count constraint is 1 since we're replacing a single tuple for specified gid
 
         # change count constraint
-        # df.loc[df['year'] == 2012, 'sale'].iloc[0]
         ub = representatives.loc[representatives['gid'] == Gi, 'integer_var_solution'].iloc[0]
         new_kwargs['count_constraint'] = (ub, None)
         for i, val in enumerate(new_constraints):
             new_kwargs['c_{}'.format(i)] = val
     else:
         new_kwargs = kwargs
-    # print("kwargs {}".format(kwargs))
-    # print("new_kwargs {}".format(new_kwargs))
     # Run direct to replace representative tuple specified by gid
     df_gid = df[df['gid'] == Gi]
     ilp_output = d.direct(df_gid, minmax, **new_kwargs)
@@ -84,13 +96,7 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
         new_row = ilp_output.solution.reset_index(drop=True)
         new_row['id'] = None
         new_row['integer_var_solution'] = 1
-        # print(new_row.columns)
-        # print(solution.columns)
-        # solution[solution['gid'] == Gi] = new_row.loc[0]
         objective = ilp_output.objective + objective_mod
-        # print("inside direct one ------------------------", Gi)
-        # print(ilp_output.solution)
-    # print(solvable, solution, objective)
     else:
         print("failed on ", Gi)
     final = namedtuple("final", ["solvable", "solution", "objective", "run_time"])
@@ -98,9 +104,18 @@ def direct_on_one_group(df, representatives, Gi, refining_package, minmax, **kwa
 
 
 def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kwargs):
-    # Input: df - dataset with group_id, dataframe for refining set or solution of sketch with the integer variable solutions for each representative of thr group,
-    #        P [(Gi, ti)] - partitioning groups  and S = P initially partitioning groups yet to be refined
-    #       all other constraint inputs for DIRECT problem
+    '''
+
+    :param df: dataset with group_id
+    :param representatives: dataframe for refining set or solution of sketch with the integer variable solutions for each representative of thr group
+    :param P: partitioning groups
+    :param S: initially partitioning groups yet to be refined
+    :param refining_package:
+    :param minmax: "min or "max" for objective
+    :param priority: initial priority value
+    :param kwargs: all other constraint inputs for DIRECT problem
+    :return: complete package or None if infeasbile solution
+    '''
 
     F = []
     print(list_to_str(S))
@@ -149,8 +164,6 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
                 return p, F
             else:
                 F.extend(F_new)
-                # print('F',list_to_str(F))
-                # print('U',list_to_str(U_priorityQ))
                 # greedily prioritize non refinable groups
                 heapq.heappush(U_priorityQ, (-count, Gi))
                 group_priorities[Gi] = -count
@@ -173,16 +186,21 @@ def Refine(df, representatives, P, S, refining_package, minmax, priority=0, **kw
                 refining_package = representatives
 
                 print('Q', list_to_str(U_priorityQ))
-                # exit(0)
-
         else:
             if len(P) != len(S):
                 F.append(Gi)
-                # return None, F
     return None, F
 
 
 def SketchRefine(df, partition, minmax, **kwargs):
+    '''
+
+    :param df: dataset with group_id
+    :param partition: dataframe for partition
+    :param minmax: "min or "max" for objective
+    :param kwargs: all other constraint inputs for DIRECT problem
+    :return: [solvable, solution, objective, runtime]
+    '''
     # Input: dataset with group_id, dataframe for partition, all other constraint inputs for DIRECT problem
     # Output: [solvable, solution, objective, runtime]
     start = time.time()
@@ -198,33 +216,18 @@ def SketchRefine(df, partition, minmax, **kwargs):
         refining_set = sktch.solution
         # Refine phase
         total_groups = len(refining_set)
-        # for index, row in refining_set.iterrows():
-        # current_refine_gid = row['gid']
         gids = refining_set['gid']
         counts = refining_set['counts']
         P = list(gids)
-        # refining_set = refining_set.set_index('gid')
         S = list(P)
         ps = refining_set
         representatives = refining_set
         refine_output, F = Refine(df, representatives, P, S, ps, minmax, **kwargs)
         print("Refine outputs- failed groups")
         print(list_to_str(F))
-        # print(refine_output.head())
-        # end = time.time()
-        # print(end-start)
-        # exit(0)
-        # if len(F) < 1:
-        #     return refine_output
         if len(F) > 0:
             print('ILP failed at refine stage for gids {}'.format(list_to_str(F)))
             return [False, None, None, None]
-            # if not refine_output.solvable:
-            #     print('ILP failed at refine stage for gid {}'.format(current_refine_gid))
-            #     return [False, None, None, None]
-            # else:
-            #     refining_set = refine_output.solution
-            #     current_refine_gid += 1
     end = time.time()
     solvable = True
     solution = refine_output
