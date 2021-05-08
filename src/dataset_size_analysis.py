@@ -1,3 +1,8 @@
+'''
+Author: Thomas Fang: tfang@umass.edu
+        Ananya Gupta: ananyagupta@umass.edu
+'''
+
 import pandas as pd
 import direct as d
 import math
