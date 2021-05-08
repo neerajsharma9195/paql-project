@@ -5,10 +5,16 @@ from collections import namedtuple
 
 
 def direct(df, minmax, sketchRefine=False, **kwargs):
-    # Inputs: dataframe df, "min or "max" for objective, A_0='attribute name' for objective function,
-    #        c#=('attribute_name', L_k, U_k) which give bounds for each attribute with a constraint
-    #        (# can be 1,2,...,14 order doesn't matter), count_range=(L_c, U,c) which is bounds for count constraint
-    # Output: [solvable as boolean, df of selected tuples, objective value, runtime]
+    '''
+
+    :param df: dataframe df
+    :param minmax: "min or "max" for objective
+    :param sketchRefine:
+    :param kwargs:  A_0='attribute name' for objective function
+                    c#=('attribute_name', L_k, U_k) which give bounds for each attribute with a constraint (# can be 1,2,...,14 order doesn't matter)
+                    count_range=(L_c, U,c) which is bounds for count constraint
+    :return: [solvable as boolean, df of selected tuples, objective value, runtime]
+    '''
     start = time.time()
     solvable = False
     solution = None
@@ -23,7 +29,7 @@ def direct(df, minmax, sketchRefine=False, **kwargs):
         if sketchRefine is False:
             variables.append(mdl.binary_var("t_{}".format(i)))
         else:
-            ub = int(df.at[i,'counts'])
+            ub = int(df.at[i, 'counts'])
             variables.append(mdl.integer_var(name="t_{}".format(i), lb=0, ub=ub))
     # Add constraints
     for ct in constraints:
